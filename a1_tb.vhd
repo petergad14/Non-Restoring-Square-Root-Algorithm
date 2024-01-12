@@ -1,13 +1,14 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use ieee.fixed_pkg.all;
 
 
 --empty entity as its a testbench
-entity a4_tb is
-end a4_tb;
+entity a1_tb is
+end a1_tb;
 
-architecture simulation_tb of a4_tb is
+architecture simulation_tb of a1_tb is
 
     --Declare the component which we want to test.
     component square_root is
@@ -17,7 +18,7 @@ architecture simulation_tb of a4_tb is
             rst             : in std_logic;                   -- Reset input
             start           : in std_logic;                   -- Start calculation signal
             A               : in unsigned((2*N) - 1 downto 0);  -- Input data 
-            Result          : out unsigned(N - 1 downto 0);     -- Square root output
+            Result          : out unsigned(N - 1 downto 0);     -- Square root output (it is 32 bits fixed point)
             finished        : out std_logic                   -- 1 When calculation is done
         );
     end component;
@@ -34,28 +35,35 @@ begin
     clk <= not clk after clk_period / 2;    --generate clock by toggling 'clk'.
 
     --entity instantiation.
-    DUT : entity work.square_root(a4) generic map(N => N)
+    DUT : entity work.square_root(a1) generic map(N => N)
              port map(clk, rst, start_tb, inp_tb, result_tb, finished_tb);
 
     SEQUENCER_PROC : process
     begin
-        rst <= '1'; start_tb <= '1'; inp_tb <= to_unsigned(0, 64);         
+        rst <= '1'; start_tb <= '1'; inp_tb <= to_unsigned(0, 64);               --Testing sqrt(0)
         wait for clk_period; rst <= '0';
-        wait for clk_period; inp_tb <= to_unsigned(1, 64);
-        wait for clk_period; inp_tb <= to_unsigned(64, 64);
-        wait for clk_period; inp_tb <= to_unsigned(128, 64);
-        wait for clk_period; inp_tb <= to_unsigned(512, 64);
-        wait for clk_period; inp_tb <= to_unsigned(630, 64);
-        wait for clk_period; inp_tb <= to_unsigned(950, 64);
-        wait for clk_period; inp_tb <= to_unsigned(5499030, 64);
-        wait for clk_period; inp_tb <= to_unsigned(1194877489, 64);
+        wait until finished_tb = '1';
+
+        wait for clk_period; rst <= '1'; inp_tb <= to_unsigned(1, 64);           --Testing sqrt(1)
+        wait for clk_period; rst <= '0';      
+        wait until finished_tb = '1';
+
+        wait for clk_period; rst <= '1'; inp_tb <= to_unsigned(512, 64);          --Testing sqrt(512)
+        wait for clk_period; rst <= '0';      
+        wait until finished_tb = '1';
+
+        wait for clk_period; rst <= '1'; inp_tb <= to_unsigned(5499030, 64);      --Testing sqrt(5499030)
+        wait for clk_period; rst <= '0';      
+        wait until finished_tb = '1';
+
+        wait for clk_period; rst <= '1'; inp_tb <= to_unsigned(1194877489, 64);    --Testing sqrt(1194877489)
+        wait for clk_period; rst <= '0';      
+        wait until finished_tb = '1';
 
         report "Simulation finished";
         wait;
     end process;
 
 end architecture;
-
-
 
 
